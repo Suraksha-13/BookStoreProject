@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'services/user_service.dart';
+import 'services/user_service.dart'; // Pointing explicitly to your updated AuthService
 import 'models/user_model.dart';
 
 class UserProvider extends InheritedWidget {
@@ -45,7 +45,9 @@ class _UserStoreState extends State<UserStore> {
   }
 
   void logout() async {
-    await AuthService.clearToken(); // Clears cached tokens out of local storage
+    // CRITICAL UPDATE: Clears both jwt_token AND active_user_id cleanly from SharedPreferences
+    await AuthService.clearSession();
+
     setState(() {
       user = null;
     });

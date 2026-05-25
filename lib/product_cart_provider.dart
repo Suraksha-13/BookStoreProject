@@ -1,55 +1,38 @@
 import 'package:flutter/material.dart';
-
-class Product {
-  final String id;
-  final String title;
-  final String image;
-  final double price;
-
-  Product({
-    required this.id,
-    required this.title,
-    required this.image,
-    required this.price,
-  });
-}
+import '../models/product_model.dart';
+import '../services/shop_service.dart';
 
 class ProductCartProvider extends InheritedWidget {
   final List<Product> cart;
-
+  final bool isCartLoading;
   final Function(Product) addToCart;
   final Function(Product) removeFromCart;
   final Function() clearCart;
+  final Function() refreshCart;
 
   const ProductCartProvider({
     super.key,
     required this.cart,
+    required this.isCartLoading,
     required this.addToCart,
     required this.removeFromCart,
     required this.clearCart,
+    required this.refreshCart,
     required super.child,
   });
 
   static ProductCartProvider of(BuildContext context) {
-    final provider =
-    context.dependOnInheritedWidgetOfExactType<ProductCartProvider>();
-
-    if (provider == null) {
-      throw FlutterError("ProductCartProvider not found");
-    }
-
-    return provider;
+    return context.dependOnInheritedWidgetOfExactType<ProductCartProvider>()!;
   }
 
   @override
   bool updateShouldNotify(ProductCartProvider oldWidget) {
-    return oldWidget.cart != cart;
+    return oldWidget.cart != cart || oldWidget.isCartLoading != isCartLoading;
   }
 }
 
 class ProductCartStore extends StatefulWidget {
   final Widget child;
-
   const ProductCartStore({super.key, required this.child});
 
   @override
@@ -57,33 +40,48 @@ class ProductCartStore extends StatefulWidget {
 }
 
 class _ProductCartStoreState extends State<ProductCartStore> {
-  final List<Product> _cart = [];
+  List<Product> _cart = [];
+  bool _isLoading = false;
 
-  void _add(Product product) {
+  @override
+  void initState() {
+    super.initState();
+    loadCartData();
+  }
+
+  Future<void> loadCartData() async {
+    setState(() => _isLoading = true);
+    final serverCart = await ShopService.fetchCart();
     setState(() {
-      _cart.add(product);
+      _cart = serverCart;
+      _isLoading = false;
     });
   }
 
-  void _remove(Product product) {
-    setState(() {
-      _cart.removeWhere((item) => item.id == product.id);
-    });
+  void _add(Product product) async {
+    final success = await ShopService.addItem(product.id);
+    if (success) await loadCartData();
   }
 
-  void _clear() {
-    setState(() {
-      _cart.clear();
-    });
+  void _remove(Product product) async {
+    final success = await ShopService.removeItem(product.id);
+    if (success) await loadCartData();
+  }
+
+  void _clear() async {
+    final success = await ShopService.purgeCart();
+    if (success) setState(() => _cart.clear());
   }
 
   @override
   Widget build(BuildContext context) {
     return ProductCartProvider(
       cart: _cart,
+      isCartLoading: _isLoading,
       addToCart: _add,
       removeFromCart: _remove,
       clearCart: _clear,
+      refreshCart: loadCartData,
       child: widget.child,
     );
   }

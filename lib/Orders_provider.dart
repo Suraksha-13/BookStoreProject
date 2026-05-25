@@ -1,36 +1,24 @@
 import 'package:flutter/material.dart';
-import 'product_cart_provider.dart';
-
-class Order {
-  final List<Product> items;
-  String status;
-
-  Order({
-    required this.items,
-    this.status = "pending",
-  });
-
-  Order copyWith({List<Product>? items, String? status}) {
-    return Order(
-      items: items ?? this.items,
-      status: status ?? this.status,
-    );
-  }
-}
+import '../models/order_model.dart';
+import '../models/product_model.dart';
+import '../services/order_service.dart';
 
 class OrderProvider extends InheritedWidget {
   final List<Order> orders;
-
+  final bool isLoading;
   final Function(List<Product>) placeOrder;
-  final Function(int index) approveOrder;
-  final Function(int index) rejectOrder;
+  final Function(int orderId) approveOrder;
+  final Function(int orderId) rejectOrder;
+  final Function() refreshOrders;
 
   const OrderProvider({
     super.key,
     required this.orders,
+    required this.isLoading,
     required this.placeOrder,
     required this.approveOrder,
     required this.rejectOrder,
+    required this.refreshOrders,
     required super.child,
   });
 
@@ -40,13 +28,12 @@ class OrderProvider extends InheritedWidget {
 
   @override
   bool updateShouldNotify(OrderProvider oldWidget) {
-    return oldWidget.orders != orders;
+    return oldWidget.orders != orders || oldWidget.isLoading != isLoading;
   }
 }
 
 class OrderStore extends StatefulWidget {
   final Widget child;
-
   const OrderStore({super.key, required this.child});
 
   @override
@@ -54,33 +41,48 @@ class OrderStore extends StatefulWidget {
 }
 
 class _OrderStoreState extends State<OrderStore> {
-  final List<Order> _orders = [];
+  List<Order> _orders = [];
+  bool _isLoading = false;
 
-  void _placeOrder(List<Product> items) {
+  @override
+  void initState() {
+    super.initState();
+    loadOrders();
+  }
+
+  Future<void> loadOrders() async {
+    setState(() => _isLoading = true);
+    final data = await OrderService.fetchOrders();
     setState(() {
-      _orders.add(Order(items: items));
+      _orders = data;
+      _isLoading = false;
     });
   }
 
-  void _approve(int index) {
-    setState(() {
-      _orders[index].status = "approved";
-    });
+  void _place(List<Product> items) async {
+    final success = await OrderService.placeOrder(items);
+    if (success) await loadOrders();
   }
 
-  void _reject(int index) {
-    setState(() {
-      _orders.removeAt(index);
-    });
+  void _approve(int oId) async {
+    final success = await OrderService.updateStatus(oId, "approved");
+    if (success) await loadOrders();
+  }
+
+  void _reject(int oId) async {
+    final success = await OrderService.updateStatus(oId, "rejected");
+    if (success) await loadOrders();
   }
 
   @override
   Widget build(BuildContext context) {
     return OrderProvider(
       orders: _orders,
-      placeOrder: _placeOrder,
+      isLoading: _isLoading,
+      placeOrder: _place,
       approveOrder: _approve,
       rejectOrder: _reject,
+      refreshOrders: loadOrders,
       child: widget.child,
     );
   }
