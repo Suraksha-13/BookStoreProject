@@ -43,8 +43,10 @@ class _BooksPageState extends State<BooksPage> {
           : GridView.builder(
         padding: const EdgeInsets.all(10),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2, childAspectRatio: 0.68, crossAxisSpacing: 10, mainAxisSpacing: 10
-        ),
+            crossAxisCount: 2,
+            childAspectRatio: 0.68,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10),
         itemCount: _catalog.length,
         itemBuilder: (context, idx) {
           final b = _catalog[idx];
@@ -52,17 +54,48 @@ class _BooksPageState extends State<BooksPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(child: Image.network(b.image, fit: BoxFit.cover, width: double.infinity)),
+                Expanded(
+                  child: Image.network(
+                    b.image,
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    errorBuilder: (c, e, s) => const Center(
+                        child: Icon(Icons.broken_image, size: 40)),
+                  ),
+                ),
                 Padding(
                   padding: const EdgeInsets.all(6),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(b.title, maxLines: 1, style: const TextStyle(fontWeight: FontWeight.bold)),
+                      Text(
+                        b.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 2),
                       Text("\$${b.price.toStringAsFixed(2)}"),
-                      ElevatedButton(
-                        onPressed: () => cartStore.addToCart(b),
-                        child: const Text("Add to Cart"),
+                      const SizedBox(height: 4),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            // Await complete database transaction sequence
+                            await cartStore.addToCart(b);
+
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Added "${b.title}" to cart!'),
+                                  backgroundColor: Colors.green,
+                                  duration: const Duration(seconds: 1),
+                                ),
+                              );
+                            }
+                          },
+                          child: const Text("Add to Cart"),
+                        ),
                       )
                     ],
                   ),

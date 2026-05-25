@@ -5,8 +5,8 @@ import '../services/shop_service.dart';
 class ProductCartProvider extends InheritedWidget {
   final List<Product> cart;
   final bool isCartLoading;
-  final Function(Product) addToCart;
-  final Function(Product) removeFromCart;
+  final Future<void> Function(Product) addToCart;
+  final Future<void> Function(Product) removeFromCart;
   final Function() clearCart;
   final Function() refreshCart;
 
@@ -58,19 +58,25 @@ class _ProductCartStoreState extends State<ProductCartStore> {
     });
   }
 
-  void _add(Product product) async {
+  Future<void> _add(Product product) async {
     final success = await ShopService.addItem(product.id);
-    if (success) await loadCartData();
+    if (success) {
+      await loadCartData();
+    }
   }
 
-  void _remove(Product product) async {
+  Future<void> _remove(Product product) async {
     final success = await ShopService.removeItem(product.id);
-    if (success) await loadCartData();
+    if (success) {
+      await loadCartData();
+    }
   }
 
   void _clear() async {
     final success = await ShopService.purgeCart();
-    if (success) setState(() => _cart.clear());
+    if (success) {
+      setState(() => _cart.clear());
+    }
   }
 
   @override
