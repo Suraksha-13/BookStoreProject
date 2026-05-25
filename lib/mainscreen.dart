@@ -50,7 +50,7 @@ class _MainScaffoldState extends State<MainScaffold> {
     final userProvider = UserProvider.of(context);
 
 
-    userProvider.logoutUser();
+    userProvider.logout();
 
 
     final cartProvider = ProductCartProvider.of(context);

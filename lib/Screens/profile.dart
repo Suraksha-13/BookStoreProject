@@ -77,7 +77,7 @@ class ProfilePage extends StatelessWidget {
 
                   onPressed: () {
 
-                    provider.logoutUser();
+                    provider.logout();
 
                     Navigator.pushNamedAndRemoveUntil(
                       context,

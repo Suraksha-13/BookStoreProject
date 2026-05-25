@@ -21,3 +21,5 @@ console.log("Connected");
 
 
 });
+
+module.exports = db;

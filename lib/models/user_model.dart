@@ -1,42 +1,38 @@
-
 class UserModel {
-
   final int? id;
   final String username;
   final String email;
   final String password;
   final String role;
 
-  UserModel({this.id,
+  UserModel({
+    this.id,
     required this.username,
     required this.email,
     required this.password,
-    required this.role
+    required this.role,
   });
 
-
-  factory UserModel.fromJson(Map<String, dynamic> json){
-
+  factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-        id: json['id'],
-        username: json['username'],
-        email: json['email'],
-        password: json['password'],
-        role: json['role'],
+      id: json['id'] as int?,
+      // Using '??' guarantees that if the key is null or missing, it falls back to an empty string instead of crashing
+      username: json['username']?.toString() ?? '',
+      email: json['email']?.toString() ?? '',
+      password: json['password']?.toString() ?? '',
+      role: json['role']?.toString() ?? 'user', // Defaults to 'user' if role is null
     );
   }
 
   Map<String, dynamic> toJson() {
-
-    return{
+    return {
       "id": id,
       "username": username,
-      "email" : email,
+      "email": email,
       "password": password,
-      "role": role
+      "role": role,
     };
   }
-
 
   UserModel copyWith({
     String? username,
@@ -52,5 +48,4 @@ class UserModel {
       role: role ?? this.role,
     );
   }
-
 }

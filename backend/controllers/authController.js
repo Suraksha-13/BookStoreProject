@@ -29,7 +29,7 @@ exports.signup = (req, res) => {
    const token = jwt.sign(
    {id: result.insertId, email: email, role: "user"},
    JWT_SECRET,
-   {expiresIn: "7d"};
+   {expiresIn: "7d"}
    );
 
    res.status(201).json({
@@ -73,7 +73,7 @@ exports.signup = (req, res) => {
      success: true,
      message: "Login Successfull",
      token: token,
-     user: {id: user.id, username: user.username, email: user.email, role, user.role}
+     user: {id: user.id, username: user.username, email: user.email, role: user.role}
      });
 
    });

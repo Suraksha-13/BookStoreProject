@@ -52,6 +52,28 @@ class AuthService{
 
   }
 
+  static Future<Map<String, dynamic>> register(UserModel user) async {
+    try {
+      final url = Uri.parse("${ApiConfig.baseUrl}/auth/signup");
+
+      final res = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(user.toJson()),
+      ).timeout(const Duration(seconds: 10));
+
+      final Map<String, dynamic> data = jsonDecode(res.body);
+
+      if (data["success"] == true && data.containsKey("token")) {
+        await _saveToken(data["token"]);
+      }
+
+      return data;
+    } catch (e) {
+      return {"success": false, "message": "Could not connect to database server: $e"};
+    }
+  }
+
 
 }
 

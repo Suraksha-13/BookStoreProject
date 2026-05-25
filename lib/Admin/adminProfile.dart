@@ -7,7 +7,7 @@ class AdminProfilePage extends StatelessWidget {
 
   void _logout(BuildContext context) {
     final provider = UserProvider.of(context);
-    provider.logoutUser();
+    provider.logout();
 
 
     Navigator.pushNamedAndRemoveUntil(

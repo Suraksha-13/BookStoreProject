@@ -1,58 +1,24 @@
 import 'package:flutter/material.dart';
-
-class UserData {
-  final String username;
-  final String email;
-  final String password;
-  final String role;
-
-  UserData({
-    required this.username,
-    required this.email,
-    required this.password,
-    required this.role,
-  });
-
-  UserData copyWith({
-    String? username,
-    String? email,
-    String? password,
-    String? role,
-  }) {
-    return UserData(
-      username: username ?? this.username,
-      email: email ?? this.email,
-      password: password ?? this.password,
-      role: role ?? this.role,
-    );
-  }
-}
+import 'services/user_service.dart';
+import 'models/user_model.dart';
 
 class UserProvider extends InheritedWidget {
-  final UserData? user;
-
-  final Function(UserData) registerUser;
-  final Function(String email, String password) loginUser;
-  final Function() logoutUser;
+  final UserModel? user;
+  final void Function(UserModel) setUser;
+  final VoidCallback logout;
 
   const UserProvider({
     super.key,
     required this.user,
-    required this.registerUser,
-    required this.loginUser,
-    required this.logoutUser,
+    required this.setUser,
+    required this.logout,
     required super.child,
   });
 
   static UserProvider of(BuildContext context) {
-    final provider =
-    context.dependOnInheritedWidgetOfExactType<UserProvider>();
-
-    if (provider == null) {
-      throw FlutterError("UserProvider not found in widget tree");
-    }
-
-    return provider;
+    final provider = context.dependOnInheritedWidgetOfExactType<UserProvider>();
+    assert(provider != null, "UserProvider not found in widget tree. Make sure to wrap MaterialApp in UserStore.");
+    return provider!;
   }
 
   @override
@@ -63,7 +29,6 @@ class UserProvider extends InheritedWidget {
 
 class UserStore extends StatefulWidget {
   final Widget child;
-
   const UserStore({super.key, required this.child});
 
   @override
@@ -71,68 +36,27 @@ class UserStore extends StatefulWidget {
 }
 
 class _UserStoreState extends State<UserStore> {
-  UserData? _user;
+  UserModel? user;
 
-
-  final UserData _admin = UserData(
-    username: "Admin",
-    email: "admin@gmail.com",
-    password: "admin123",
-    role: "admin",
-  );
-
-
-  final List<UserData> _users = [];
-
-  // ✅ REGISTER USER
-  void _register(UserData user) {
-    final newUser = user.copyWith(role: "user");
-
+  void setUser(UserModel newUser) {
     setState(() {
-      _users.add(newUser);
-      _user = newUser;
+      user = newUser;
     });
   }
 
-  void _login(String email, String password) {
-    // 🔐 ADMIN LOGIN FIRST (IMPORTANT)
-    if (email == _admin.email && password == _admin.password) {
-      setState(() {
-        _user = _admin;
-      });
-      return;
-    }
-
-
-    final matchedUser = _users.where(
-          (u) => u.email == email && u.password == password,
-    );
-
-    if (matchedUser.isNotEmpty) {
-      setState(() {
-        _user = matchedUser.first;
-      });
-    } else {
-      setState(() {
-        _user = null;
-      });
-    }
-  }
-
-
-  void _logout() {
+  void logout() async {
+    await AuthService.clearToken(); // Clears cached tokens out of local storage
     setState(() {
-      _user = null;
+      user = null;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return UserProvider(
-      user: _user,
-      registerUser: _register,
-      loginUser: _login,
-      logoutUser: _logout,
+      user: user,
+      setUser: setUser,
+      logout: logout,
       child: widget.child,
     );
   }
