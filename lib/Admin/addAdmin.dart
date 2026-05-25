@@ -12,6 +12,7 @@ class AddAdminPage extends StatefulWidget {
 }
 
 class _AddAdminPageState extends State<AddAdminPage> {
+  final _formKey = GlobalKey<FormState>();
   final nameController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
@@ -19,7 +20,9 @@ class _AddAdminPageState extends State<AddAdminPage> {
   String? nameError;
   String? emailError;
   String? passwordError;
-  bool isLoading = false; // Tracks whether the network call is processing
+
+  bool isLoading = false;
+  bool _obscurePassword = true; // Handles dynamic visibility toggling
 
   /// Validates inputs locally before hitting the database endpoint
   bool validateInputs() {
@@ -36,8 +39,12 @@ class _AddAdminPageState extends State<AddAdminPage> {
       isValid = false;
     }
 
-    if (emailController.text.trim().isEmpty) {
+    final emailText = emailController.text.trim();
+    if (emailText.isEmpty) {
       emailError = "Email is required";
+      isValid = false;
+    } else if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(emailText)) {
+      emailError = "Please enter a valid email address";
       isValid = false;
     }
 
@@ -58,7 +65,8 @@ class _AddAdminPageState extends State<AddAdminPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Please fix errors before continuing"),
-          backgroundColor: Colors.orangeAccent,
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
         ),
       );
       return;
@@ -88,8 +96,9 @@ class _AddAdminPageState extends State<AddAdminPage> {
     if (response["success"] == true) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("New admin created successfully"),
+          content: Text("New admin profile created successfully!"),
           backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
         ),
       );
 
@@ -104,6 +113,7 @@ class _AddAdminPageState extends State<AddAdminPage> {
         SnackBar(
           content: Text(errorMsg),
           backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
         ),
       );
     }
@@ -121,97 +131,160 @@ class _AddAdminPageState extends State<AddAdminPage> {
   Widget build(BuildContext context) {
     return AdminMainScaffold(
       currentIndex: 3,
-      body: Padding(
-        padding: const EdgeInsets.all(16),
+      body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 400),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    "Create New Admin",
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // Username Input
-                  TextField(
-                    controller: nameController,
-                    textInputAction: TextInputAction.next,
-                    decoration: InputDecoration(
-                      labelText: "Username",
-                      errorText: nameError,
-                      prefixIcon: const Icon(Icons.person_add_alt_1_outlined),
-                      border: const OutlineInputBorder(),
-                    ),
-                  ),
-
-                  const SizedBox(height: 15),
-
-                  // Email Input
-                  TextField(
-                    controller: emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    textInputAction: TextInputAction.next,
-                    decoration: InputDecoration(
-                      labelText: "Email",
-                      errorText: emailError,
-                      prefixIcon: const Icon(Icons.email_outlined),
-                      border: const OutlineInputBorder(),
-                    ),
-                  ),
-
-                  const SizedBox(height: 15),
-
-                  // Password Input
-                  TextField(
-                    controller: passwordController,
-                    obscureText: true,
-                    textInputAction: TextInputAction.done,
-                    onSubmitted: (_) => addAdmin(),
-                    decoration: InputDecoration(
-                      labelText: "Password",
-                      errorText: passwordError,
-                      prefixIcon: const Icon(Icons.admin_panel_settings_outlined),
-                      border: const OutlineInputBorder(),
-                    ),
-                  ),
-
-                  const SizedBox(height: 25),
-
-                  // Asymmetric submission block with an interactive loading guard
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton(
-                      onPressed: isLoading ? null : addAdmin,
-                      style: ElevatedButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: isLoading
-                          ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.blueAccent,
-                        ),
-                      )
-                          : const Text(
-                        "Create Admin",
-                        style: TextStyle(fontSize: 16),
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // --- HEADER BRANDING BLOCK ---
+                    Center(
+                      child: Column(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).primaryColor.withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.supervisor_account_rounded,
+                              size: 44,
+                              color: Theme.of(context).primaryColor,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            "Create Admin Account",
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: -0.5,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            "Provision new system privileges securely",
+                            style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                ],
+
+                    const SizedBox(height: 32),
+
+                    // --- CARD CONTENT INPUT WRAPPER ---
+                    Card(
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: BorderSide(color: Colors.grey.withOpacity(0.2), width: 1.5),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Column(
+                          children: [
+                            // Username Input Field
+                            TextField(
+                              controller: nameController,
+                              textInputAction: TextInputAction.next,
+                              decoration: InputDecoration(
+                                labelText: "Username",
+                                errorText: nameError,
+                                prefixIcon: const Icon(Icons.person_add_alt_1_outlined, size: 22),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                              ),
+                            ),
+
+                            const SizedBox(height: 18),
+
+                            // Email Input Field
+                            TextField(
+                              controller: emailController,
+                              keyboardType: TextInputType.emailAddress,
+                              textInputAction: TextInputAction.next,
+                              decoration: InputDecoration(
+                                labelText: "Email Address",
+                                errorText: emailError,
+                                prefixIcon: const Icon(Icons.email_outlined, size: 22),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                              ),
+                            ),
+
+                            const SizedBox(height: 18),
+
+                            // Password Input Field
+                            TextField(
+                              controller: passwordController,
+                              obscureText: _obscurePassword,
+                              textInputAction: TextInputAction.done,
+                              onSubmitted: (_) => addAdmin(),
+                              decoration: InputDecoration(
+                                labelText: "Password",
+                                errorText: passwordError,
+                                prefixIcon: const Icon(Icons.admin_panel_settings_outlined, size: 22),
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                                    size: 20,
+                                  ),
+                                  onPressed: () {
+                                    setState(() => _obscurePassword = !_obscurePassword);
+                                  },
+                                ),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 30),
+
+                    // --- INTERACTIVE SYSTEM SUBMIT TRIGGER ---
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: isLoading ? null : addAdmin,
+                        style: ElevatedButton.styleFrom(
+                          elevation: 0,
+                          backgroundColor: Theme.of(context).primaryColor,
+                          foregroundColor: Colors.white,
+                          disabledBackgroundColor: Theme.of(context).primaryColor.withOpacity(0.6),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: isLoading
+                            ? const SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            color: Colors.white,
+                          ),
+                        )
+                            : const Text(
+                          "Register Admin Privileges",
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
