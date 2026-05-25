@@ -7,6 +7,7 @@ import '../models/user_model.dart';
 class AuthService {
   static const String _tokenKey = 'jwt_token';
   static const String _userIdKey = 'active_user_id';
+  static const String _userRoleKey = 'active_user_role'; // 🔥 Added role key
 
   // --- PRIVATE STORAGE HELPERS ---
   static Future<void> _saveToken(String token) async {
@@ -19,16 +20,27 @@ class AuthService {
     await prefs.setInt(_userIdKey, userId);
   }
 
+  // 🔥 Added helper to save user role
+  static Future<void> _saveUserRole(String role) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_userRoleKey, role);
+  }
+
   // --- PUBLIC GETTERS FOR SESSION MANAGEMENT ---
   static Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_tokenKey);
   }
 
-  // This is what ShopService and OrderService use dynamically to get the ID
   static Future<int?> getActiveUserId() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getInt(_userIdKey);
+  }
+
+  // 🔥 Added getter to check if user is admin or regular user
+  static Future<String?> getActiveUserRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_userRoleKey);
   }
 
   // Clear everything on logout
@@ -36,6 +48,7 @@ class AuthService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
     await prefs.remove(_userIdKey);
+    await prefs.remove(_userRoleKey); // 🔥 Clear role on logout
   }
 
   // --- AUTHENTICATION OPERATIONS ---
@@ -52,16 +65,20 @@ class AuthService {
       final Map<String, dynamic> data = jsonDecode(res.body);
 
       if (data["success"] == true) {
-        // Save the JWT token if present
         if (data.containsKey("token")) {
           await _saveToken(data["token"]);
         }
 
-        // Extract and save the User ID from the inner user object safely
         if (data.containsKey("user") && data["user"] != null) {
           final int? userId = int.tryParse(data["user"]["id"]?.toString() ?? '');
           if (userId != null) {
             await _saveUserId(userId);
+          }
+
+          // 🔥 Save user role (handles data keys named 'role' or 'role_name')
+          final String? role = data["user"]["role"]?.toString() ?? data["user"]["role_name"]?.toString();
+          if (role != null) {
+            await _saveUserRole(role);
           }
         }
       }
@@ -85,16 +102,20 @@ class AuthService {
       final Map<String, dynamic> data = jsonDecode(res.body);
 
       if (data["success"] == true) {
-        // Save the JWT token if present
         if (data.containsKey("token")) {
           await _saveToken(data["token"]);
         }
 
-        // Extract and save the newly generated User ID from the backend register response
         if (data.containsKey("user") && data["user"] != null) {
           final int? userId = int.tryParse(data["user"]["id"]?.toString() ?? '');
           if (userId != null) {
             await _saveUserId(userId);
+          }
+
+          // 🔥 Save user role upon successful signup
+          final String? role = data["user"]["role"]?.toString() ?? data["user"]["role_name"]?.toString();
+          if (role != null) {
+            await _saveUserRole(role);
           }
         }
       }
