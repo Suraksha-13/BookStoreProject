@@ -1,23 +1,18 @@
 import 'package:flutter/material.dart';
-
 import 'package:bookstore/Screens/HomePage.dart';
 import 'package:bookstore/authentication/login.dart';
 import './authentication/Signup.dart';
 import './Screens/books.dart';
 import 'UserProvider.dart';
 import 'product_cart_provider.dart';
-
 import './Screens/cartpage.dart';
 import './Screens/profile.dart';
-
 import './Admin/AdminPage.dart';
 import './Admin/orders.dart';
 import './Admin/adminProfile.dart';
 import './Admin/addAdmin.dart';
 import './Admin/AddBook.dart';
-
 import './Screens/orders_page.dart';
-
 import 'Orders_provider.dart';
 
 void main() {

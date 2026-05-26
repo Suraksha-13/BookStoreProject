@@ -59,23 +59,13 @@ class OrdersPage extends StatelessWidget {
                   )),
                   const Divider(),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        TextButton.icon(
-                          onPressed: isApproved || isRejected ? null : () => provider.rejectOrder(order.id),
-                          icon: const Icon(Icons.cancel, color: Colors.red),
-                          label: const Text("Reject", style: TextStyle(color: Colors.red)),
-                        ),
-                        const SizedBox(width: 10),
-                        ElevatedButton.icon(
-                          onPressed: isApproved || isRejected ? null : () => provider.approveOrder(order.id),
-                          style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                          icon: const Icon(Icons.check_circle, color: Colors.white),
-                          label: const Text("Approve", style: TextStyle(color: Colors.white)),
-                        ),
-                      ],
+                    padding: const EdgeInsets.all(10.0),
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        "Status: ${order.status.toUpperCase()}",
+                        style: TextStyle(color: statusColor, fontWeight: FontWeight.bold),
+                      ),
                     ),
                   )
                 ],

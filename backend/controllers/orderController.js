@@ -67,8 +67,9 @@ exports.getUserOrders = (req, res) => {
 
 exports.updateStatus = (req, res) => {
     const { orderId, status } = req.body;
+    // Ensure you have an Order.updateStatus method in orderModel.js
     Order.updateStatus(orderId, status, (err) => {
-        if (err) return res.status(500).json({ success: false });
-        res.status(200).json({ success: true, orderId, status });
+        if (err) return res.status(500).json({ success: false, message: "Update failed" });
+        res.status(200).json({ success: true, message: "Status updated" });
     });
 };
