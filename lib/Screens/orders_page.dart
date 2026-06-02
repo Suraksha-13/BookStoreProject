@@ -2,8 +2,22 @@ import 'package:flutter/material.dart';
 import '../Orders_provider.dart';
 import '../mainscreen.dart';
 
-class OrdersPage extends StatelessWidget {
+class OrdersPage extends StatefulWidget {
   const OrdersPage({super.key});
+
+  @override
+  State<OrdersPage> createState() => _OrdersPageState();
+}
+
+class _OrdersPageState extends State<OrdersPage> {
+  @override
+  void initState() {
+    super.initState();
+    // Forces data fetch immediately when page initializes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      OrderProvider.of(context).refreshOrders();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +66,15 @@ class OrdersPage extends StatelessWidget {
                 ),
                 children: [
                   ...order.items.map((item) => ListTile(
-                    leading: Image.network(item.image, width: 40, height: 50, fit: BoxFit.cover),
+                    leading: item.image.isNotEmpty
+                        ? Image.network(
+                      item.image,
+                      width: 40,
+                      height: 50,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.shopping_bag),
+                    )
+                        : const Icon(Icons.shopping_bag),
                     title: Text(item.title),
                     subtitle: Text("Qty: ${item.quantity}"),
                     trailing: Text("\$${(item.price * item.quantity).toStringAsFixed(2)}"),

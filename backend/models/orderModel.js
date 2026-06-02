@@ -12,7 +12,7 @@ const Order = {
     },
     getItemsByOrderId: (orderId, callback) => {
         db.query(
-            `SELECT p.id, p.title, p.image_url, p.price, oi.quantity
+            `SELECT p.id, p.title, COALESCE(p.image_url, '') AS image_url, p.price, oi.quantity
              FROM order_items oi
              LEFT JOIN products p ON oi.product_id = p.id
              WHERE oi.order_id = ?`,

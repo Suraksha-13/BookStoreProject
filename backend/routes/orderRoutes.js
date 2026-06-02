@@ -1,9 +1,12 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const orders = require('../controllers/orderController');
+const orderController = require("../controllers/orderController");
 
-router.post("/my-orders", orders.getUserOrders);
-router.post("/place", orders.placeOrder);
-router.post("/update-status", orders.updateStatus);
+router.post("/place", orderController.placeOrder);
+router.post("/my-orders", orderController.getUserOrders);
+router.post("/update-status", orderController.updateStatus);
+
+// NEW: Endpoint for Admin View
+router.get("/admin-all", orderController.getAllAdminOrders);
 
 module.exports = router;

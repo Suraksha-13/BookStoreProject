@@ -9,7 +9,7 @@ class OrderProvider extends InheritedWidget {
   final Function(List<Product>) placeOrder;
   final Function(int orderId) approveOrder;
   final Function(int orderId) rejectOrder;
-  final Function() refreshOrders;
+  final Function({bool isAdmin}) refreshOrders;
 
   const OrderProvider({
     super.key,
@@ -43,16 +43,18 @@ class OrderStore extends StatefulWidget {
 class _OrderStoreState extends State<OrderStore> {
   List<Order> _orders = [];
   bool _isLoading = false;
+  bool _lastRefreshWasAdmin = false;
 
-  @override
-  void initState() {
-    super.initState();
-    loadOrders();
-  }
+  Future<void> loadOrders({bool isAdmin = false}) async {
+    setState(() {
+      _isLoading = true;
+      _lastRefreshWasAdmin = isAdmin;
+    });
 
-  Future<void> loadOrders() async {
-    setState(() => _isLoading = true);
-    final data = await OrderService.fetchOrders();
+    final data = isAdmin
+        ? await OrderService.fetchAllAdminOrders()
+        : await OrderService.fetchOrders();
+
     setState(() {
       _orders = data;
       _isLoading = false;
@@ -61,17 +63,17 @@ class _OrderStoreState extends State<OrderStore> {
 
   void _place(List<Product> items) async {
     final success = await OrderService.placeOrder(items);
-    if (success) await loadOrders();
+    if (success) await loadOrders(isAdmin: _lastRefreshWasAdmin);
   }
 
   void _approve(int oId) async {
     final success = await OrderService.updateStatus(oId, "approved");
-    if (success) await loadOrders();
+    if (success) await loadOrders(isAdmin: _lastRefreshWasAdmin);
   }
 
   void _reject(int oId) async {
     final success = await OrderService.updateStatus(oId, "rejected");
-    if (success) await loadOrders();
+    if (success) await loadOrders(isAdmin: _lastRefreshWasAdmin);
   }
 
   @override

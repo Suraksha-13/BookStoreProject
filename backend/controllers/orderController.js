@@ -39,26 +39,71 @@ exports.getUserOrders = (req, res) => {
     if (!userId) return res.status(400).json({ success: false, message: "User ID required" });
 
     Order.getUserOrders(userId, (err, orders) => {
-        if (err) return res.status(500).json({ success: false });
-        if (orders.length === 0) return res.status(200).json({ success: true, orders: [] });
+        if (err) return res.status(500).json({ success: false, message: "Database failure fetching orders" });
+        if (!orders || orders.length === 0) return res.status(200).json({ success: true, orders: [] });
 
         const packedOrders = [];
         let completed = 0;
+        let hasErrorOccurred = false;
 
         orders.forEach((order) => {
             Order.getItemsByOrderId(order.id, (iErr, items) => {
-                if (iErr) return res.status(500).json({ success: false });
+                if (hasErrorOccurred) return;
+
+                if (iErr) {
+                    hasErrorOccurred = true;
+                    return res.status(500).json({ success: false, message: "Error fetching order items" });
+                }
+
                 packedOrders.push({
                     id: order.id,
                     status: order.status,
                     total_price: order.total_price,
                     created_at: order.created_at,
-                    items
+                    items: items || []
                 });
+
                 completed++;
                 if (completed === orders.length) {
-                    packedOrders.sort((a, b) => b.created_at - a.created_at);
-                    res.status(200).json({ success: true, orders: packedOrders });
+                    packedOrders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                    return res.status(200).json({ success: true, orders: packedOrders });
+                }
+            });
+        });
+    });
+};
+
+// NEW: Fetches ALL system orders for global admin viewing
+exports.getAllAdminOrders = (req, res) => {
+    db.query("SELECT id, status, total_price, created_at FROM orders ORDER BY created_at DESC", (err, orders) => {
+        if (err) return res.status(500).json({ success: false, message: "Database failure fetching admin logs" });
+        if (!orders || orders.length === 0) return res.status(200).json({ success: true, orders: [] });
+
+        const packedOrders = [];
+        let completed = 0;
+        let hasErrorOccurred = false;
+
+        orders.forEach((order) => {
+            Order.getItemsByOrderId(order.id, (iErr, items) => {
+                if (hasErrorOccurred) return;
+
+                if (iErr) {
+                    hasErrorOccurred = true;
+                    return res.status(500).json({ success: false, message: "Error parsing item array" });
+                }
+
+                packedOrders.push({
+                    id: order.id,
+                    status: order.status,
+                    total_price: order.total_price,
+                    created_at: order.created_at,
+                    items: items || []
+                });
+
+                completed++;
+                if (completed === orders.length) {
+                    packedOrders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                    return res.status(200).json({ success: true, orders: packedOrders });
                 }
             });
         });
@@ -67,7 +112,6 @@ exports.getUserOrders = (req, res) => {
 
 exports.updateStatus = (req, res) => {
     const { orderId, status } = req.body;
-    // Ensure you have an Order.updateStatus method in orderModel.js
     Order.updateStatus(orderId, status, (err) => {
         if (err) return res.status(500).json({ success: false, message: "Update failed" });
         res.status(200).json({ success: true, message: "Status updated" });
